@@ -1,0 +1,33 @@
+{"scenario": "argon2", "hasher": "argon2-default", "run": 0, "single_p50_ms": 107.8, "burst_wall_ms_median": 722.5, "burst_request_p95_ms": 719.3, "failed_burst_wall_ms_median": 691.2, "idle_mib": 330.5, "peak_extra_mib": 952.1, "rss_peak_extra_mib": 975.6}
+{"scenario": "argon2", "hasher": "argon2-default", "run": 1, "single_p50_ms": 116.8, "burst_wall_ms_median": 733.3, "burst_request_p95_ms": 725.8, "failed_burst_wall_ms_median": 718.9, "idle_mib": 354.4, "peak_extra_mib": 928.5, "rss_peak_extra_mib": 943.4}
+{"scenario": "argon2", "hasher": "argon2-default", "run": 2, "single_p50_ms": 117.0, "burst_wall_ms_median": 723.3, "burst_request_p95_ms": 712.3, "failed_burst_wall_ms_median": 678.8, "idle_mib": 363.4, "peak_extra_mib": 919.1, "rss_peak_extra_mib": 924.2}
+{"scenario": "argon2", "hasher": "argon2-rfc9106", "run": 0, "single_p50_ms": 91.1, "burst_wall_ms_median": 608.7, "burst_request_p95_ms": 616.4, "failed_burst_wall_ms_median": 591.3, "idle_mib": 329.6, "peak_extra_mib": 627.7, "rss_peak_extra_mib": 657.3}
+{"scenario": "argon2", "hasher": "argon2-rfc9106", "run": 1, "single_p50_ms": 91.7, "burst_wall_ms_median": 618.5, "burst_request_p95_ms": 612.4, "failed_burst_wall_ms_median": 577.5, "idle_mib": 363.9, "peak_extra_mib": 593.3, "rss_peak_extra_mib": 600.0}
+{"scenario": "argon2", "hasher": "argon2-rfc9106", "run": 2, "single_p50_ms": 85.4, "burst_wall_ms_median": 624.8, "burst_request_p95_ms": 611.4, "failed_burst_wall_ms_median": 577.8, "idle_mib": 347.5, "peak_extra_mib": 609.6, "rss_peak_extra_mib": 625.2}
+{"scenario": "argon2", "hasher": "argon2-owasp", "run": 0, "single_p50_ms": 45.8, "burst_wall_ms_median": 131.0, "burst_request_p95_ms": 130.6, "failed_burst_wall_ms_median": 103.7, "idle_mib": 347.1, "peak_extra_mib": 201.9, "rss_peak_extra_mib": 217.4}
+{"scenario": "argon2", "hasher": "argon2-owasp", "run": 1, "single_p50_ms": 38.9, "burst_wall_ms_median": 134.7, "burst_request_p95_ms": 170.5, "failed_burst_wall_ms_median": 103.1, "idle_mib": 339.3, "peak_extra_mib": 209.7, "rss_peak_extra_mib": 230.0}
+{"scenario": "argon2", "hasher": "argon2-owasp", "run": 2, "single_p50_ms": 38.7, "burst_wall_ms_median": 132.4, "burst_request_p95_ms": 145.4, "failed_burst_wall_ms_median": 94.6, "idle_mib": 347.1, "peak_extra_mib": 201.9, "rss_peak_extra_mib": 217.4}
+{"scenario": "sweep", "hasher": "argon2-default", "clients": 1, "total": 40, "rps": 8.25, "p95_ms": 177.9, "p50_ms": 112.7}
+{"scenario": "sweep", "hasher": "argon2-default", "clients": 2, "total": 40, "rps": 13.38, "p95_ms": 172.0, "p50_ms": 148.1}
+{"scenario": "sweep", "hasher": "argon2-default", "clients": 4, "total": 48, "rps": 14.74, "p95_ms": 307.3, "p50_ms": 267.8}
+{"scenario": "sweep", "hasher": "argon2-default", "clients": 8, "total": 96, "rps": 15.48, "p95_ms": 612.2, "p50_ms": 511.2}
+{"scenario": "sweep", "hasher": "argon2-default", "clients": 16, "total": 192, "rps": 15.2, "p95_ms": 1229.5, "p50_ms": 1051.9}
+{"scenario": "sweep", "hasher": "argon2-rfc9106", "clients": 1, "total": 40, "rps": 10.62, "p95_ms": 138.5, "p50_ms": 83.9}
+{"scenario": "sweep", "hasher": "argon2-rfc9106", "clients": 2, "total": 40, "rps": 14.77, "p95_ms": 150.5, "p50_ms": 135.4}
+{"scenario": "sweep", "hasher": "argon2-rfc9106", "clients": 4, "total": 48, "rps": 16.28, "p95_ms": 278.1, "p50_ms": 238.7}
+{"scenario": "sweep", "hasher": "argon2-rfc9106", "clients": 8, "total": 96, "rps": 17.57, "p95_ms": 525.8, "p50_ms": 450.9}
+{"scenario": "sweep", "hasher": "argon2-rfc9106", "clients": 16, "total": 192, "rps": 17.15, "p95_ms": 1141.3, "p50_ms": 914.9}
+{"scenario": "sweep", "hasher": "argon2-owasp", "clients": 1, "total": 40, "rps": 21.73, "p95_ms": 77.4, "p50_ms": 40.6}
+{"scenario": "sweep", "hasher": "argon2-owasp", "clients": 2, "total": 40, "rps": 45.08, "p95_ms": 71.5, "p50_ms": 39.9}
+{"scenario": "sweep", "hasher": "argon2-owasp", "clients": 4, "total": 48, "rps": 82.28, "p95_ms": 64.9, "p50_ms": 45.8}
+{"scenario": "sweep", "hasher": "argon2-owasp", "clients": 8, "total": 96, "rps": 101.4, "p95_ms": 109.3, "p50_ms": 75.0}
+{"scenario": "sweep", "hasher": "argon2-owasp", "clients": 16, "total": 192, "rps": 103.09, "p95_ms": 195.0, "p50_ms": 150.5}
+{"scenario": "end_to_end", "version": "before", "hasher": "argon2-default", "run": 0, "queries": 124, "rps": 10.98, "p50_ms": 894.6, "p95_ms": 1183.1, "idle_mib": 355.9, "peak_extra_mib": 889.7, "rss_peak_extra_mib": 900.9}
+{"scenario": "end_to_end", "version": "before", "hasher": "argon2-default", "run": 1, "queries": 124, "rps": 11.28, "p50_ms": 884.5, "p95_ms": 1158.7, "idle_mib": 346.3, "peak_extra_mib": 869.5, "rss_peak_extra_mib": 866.4}
+{"scenario": "end_to_end", "version": "before", "hasher": "argon2-default", "run": 2, "queries": 124, "rps": 10.98, "p50_ms": 908.3, "p95_ms": 1166.3, "idle_mib": 337.7, "peak_extra_mib": 839.5, "rss_peak_extra_mib": 865.0}
+{"scenario": "end_to_end", "version": "after", "hasher": "argon2-default", "run": 0, "queries": 7, "rps": 14.96, "p50_ms": 651.4, "p95_ms": 823.4, "idle_mib": 355.7, "peak_extra_mib": 908.1, "rss_peak_extra_mib": 888.9}
+{"scenario": "end_to_end", "version": "after", "hasher": "argon2-default", "run": 1, "queries": 7, "rps": 14.5, "p50_ms": 669.5, "p95_ms": 878.8, "idle_mib": 339.1, "peak_extra_mib": 910.0, "rss_peak_extra_mib": 912.7}
+{"scenario": "end_to_end", "version": "after", "hasher": "argon2-default", "run": 2, "queries": 7, "rps": 14.35, "p50_ms": 683.3, "p95_ms": 875.8, "idle_mib": 356.4, "peak_extra_mib": 897.8, "rss_peak_extra_mib": 908.9}
+{"scenario": "end_to_end", "version": "after", "hasher": "argon2-owasp", "run": 0, "queries": 7, "rps": 82.13, "p50_ms": 113.5, "p95_ms": 165.6, "idle_mib": 354.2, "peak_extra_mib": 196.8, "rss_peak_extra_mib": 213.1}
+{"scenario": "end_to_end", "version": "after", "hasher": "argon2-owasp", "run": 1, "queries": 7, "rps": 84.02, "p50_ms": 109.0, "p95_ms": 194.0, "idle_mib": 355.7, "peak_extra_mib": 195.3, "rss_peak_extra_mib": 207.1}
+{"scenario": "end_to_end", "version": "after", "hasher": "argon2-owasp", "run": 2, "queries": 7, "rps": 85.09, "p50_ms": 105.2, "p95_ms": 186.1, "idle_mib": 354.5, "peak_extra_mib": 196.5, "rss_peak_extra_mib": 213.2}

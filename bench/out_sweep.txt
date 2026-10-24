@@ -1,0 +1,5 @@
+cpus=4  gunicorn workers=9 (sync)  sustained logins, logins/s | p95 at each client count
+setting                     1 client           2 clients           4 clients           8 clients          16 clients
+Django default       8.3/s |   178ms    13.4/s |   172ms    14.7/s |   307ms    15.5/s |   612ms    15.2/s |  1229ms
+RFC 9106 #2         10.6/s |   138ms    14.8/s |   150ms    16.3/s |   278ms    17.6/s |   526ms    17.1/s |  1141ms
+OWASP minimum       21.7/s |    77ms    45.1/s |    72ms    82.3/s |    65ms   101.4/s |   109ms   103.1/s |   195ms
