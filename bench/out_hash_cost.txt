@@ -1,0 +1,7 @@
+cpus=4  one hash at a time, median of 15  (ceiling = 4 cores / CPU per hash)
+Django default   t=2 m=100MiB p=8   wall=  86.4ms   cpu= 248.5ms   extra threads=8   ceiling= 16.1 hashes/s
+  same, 4 lanes  t=2 m=100MiB p=4   wall=  79.3ms   cpu= 237.8ms   extra threads=4   ceiling= 16.8 hashes/s
+  same, 2 lanes  t=2 m=100MiB p=2   wall= 127.4ms   cpu= 231.9ms   extra threads=2   ceiling= 17.2 hashes/s
+  same, 1 lane   t=2 m=100MiB p=1   wall= 211.8ms   cpu= 221.8ms   extra threads=0   ceiling= 18.0 hashes/s
+RFC 9106 #2      t=3 m= 64MiB p=4   wall=  60.8ms   cpu= 193.1ms   extra threads=4   ceiling= 20.7 hashes/s
+OWASP minimum    t=2 m= 19MiB p=1   wall=  23.8ms   cpu=  25.2ms   extra threads=0   ceiling=158.6 hashes/s

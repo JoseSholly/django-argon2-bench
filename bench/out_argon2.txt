@@ -1,6 +1,7 @@
 cpus=4  gunicorn workers=9 (sync)  3 runs per setting, median (min-max)
-setting         params               1 login       10 at once    p95 of the 10    10 wrong pw   peak RAM above idle
-Django default  t=2 m=100MiB p=8  117 (108-117)ms  723 (722-733)ms  719 (712-726)ms  691 (679-719)ms     928 (919-952)MiB
-RFC 9106 #2     t=3 m=64MiB  p=4    91 (85-92)ms  618 (609-625)ms  612 (611-616)ms  578 (578-591)ms     610 (593-628)MiB
-OWASP minimum   t=2 m=19MiB  p=1    39 (39-46)ms  132 (131-135)ms  145 (131-170)ms   103 (95-104)ms     202 (202-210)MiB
-idle Gunicorn (9 workers): 347MiB
+each run: 30 single logins, 10 bursts of 10, 3 bursts of 10 wrong passwords; memory = cgroup peak
+setting         params               1 login       10 at once    p95 in bursts    10 wrong pw   peak RAM above idle
+Django default  t=2 m=100MiB p=8  105 (102-105)ms  687 (677-723)ms  676 (665-717)ms  672 (663-684)ms     920 (919-944)MiB
+RFC 9106 #2     t=3 m=64MiB  p=4    84 (80-89)ms  604 (596-611)ms  609 (583-615)ms  566 (560-577)ms     585 (585-593)MiB
+OWASP minimum   t=2 m=19MiB  p=1    41 (38-45)ms  124 (121-124)ms  128 (125-131)ms    98 (96-109)ms     193 (176-218)MiB
+idle Gunicorn (9 workers): 356MiB

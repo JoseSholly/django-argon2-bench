@@ -1,12 +1,6 @@
 from django.contrib.auth.hashers import Argon2PasswordHasher
 
 
-class Argon2Mid(Argon2PasswordHasher):
-    time_cost = 3
-    memory_cost = 64 * 1024  # KiB
-    parallelism = 2
-
-
 class Argon2Owasp(Argon2PasswordHasher):
     """OWASP's minimum Argon2id setting: 19 MiB, 2 passes, 1 lane."""
 

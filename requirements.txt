@@ -3,5 +3,4 @@ Django==5.2.18
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
 gunicorn==23.0.0
-psycopg==3.2.13
-psycopg-binary==3.2.13
+psycopg[binary]==3.2.13

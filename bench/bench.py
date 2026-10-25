@@ -14,6 +14,7 @@ import argparse
 import http.client
 import json
 import os
+import resource
 import signal
 import statistics
 import subprocess
@@ -41,6 +42,21 @@ SETTINGS = {
 # ── Gunicorn in its own memory cgroup ──────────────────────────────
 
 
+def cgroup_available():
+    """True when we may create a cgroup v1 memory group (Linux, root)."""
+    if os.environ.get("BENCH_NO_CGROUP"):
+        return False
+    try:
+        os.makedirs(CGROUP, exist_ok=True)
+        return os.access(os.path.join(CGROUP, "cgroup.procs"), os.W_OK)
+    except OSError:
+        return False
+
+
+USE_CGROUP = cgroup_available()
+MEMORY_SOURCE = "cgroup peak" if USE_CGROUP else "summed worker RSS, polled every 2 ms"
+
+
 def cg_read(name):
     with open(os.path.join(CGROUP, name)) as f:
         return int(f.read())
@@ -52,10 +68,11 @@ def cg_reset_peak():
 
 
 def start_gunicorn(hasher, workers):
-    os.makedirs(CGROUP, exist_ok=True)
     env = dict(os.environ, BENCH_HASHER=hasher, DJANGO_SETTINGS_MODULE="teamhub.settings")
-    cmd = (f"echo $$ > {CGROUP}/cgroup.procs && exec {GUNICORN} teamhub.wsgi:application "
-           f"--bind 127.0.0.1:{PORT} --workers {workers} --worker-class sync --log-level warning")
+    cmd = (f"exec {GUNICORN} teamhub.wsgi:application --bind 127.0.0.1:{PORT} "
+           f"--workers {workers} --worker-class sync --log-level warning")
+    if USE_CGROUP:
+        cmd = f"echo $$ > {CGROUP}/cgroup.procs && {cmd}"
     proc = subprocess.Popen(["sh", "-c", cmd], cwd=ROOT, env=env)
     deadline = time.time() + 30
     while time.time() < deadline:
@@ -91,13 +108,45 @@ def rss_bytes(pid):
     return 0
 
 
+def cpu_seconds(pids):
+    """utime + stime of the given processes (all their threads), from /proc."""
+    tick = os.sysconf("SC_CLK_TCK")
+    total = 0
+    for pid in pids:
+        with open(f"/proc/{pid}/stat") as f:
+            fields = f.read().rsplit(")", 1)[1].split()
+        total += int(fields[11]) + int(fields[12])  # utime, stime
+    return total / tick
+
+
+def postgres_pids():
+    out = subprocess.run(["pgrep", "-u", "postgres"], capture_output=True, text=True)
+    return [int(p) for p in out.stdout.split()]
+
+
+def db_cpu_seconds():
+    """CPU of every PostgreSQL process on this machine (same-host database)."""
+    total = 0.0
+    for pid in postgres_pids():
+        try:
+            total += cpu_seconds([pid])
+        except (FileNotFoundError, ProcessLookupError):
+            pass  # a backend that exited mid-measurement
+    return total
+
+
+def client_cpu_seconds():
+    r = resource.getrusage(resource.RUSAGE_SELF)
+    return r.ru_utime + r.ru_stime
+
+
 class Memory:
-    """Peak memory above idle: the cgroup's kernel peak, and summed worker RSS
-    polled every 2 ms for comparison."""
+    """Peak memory above idle: the cgroup's kernel peak when available, and
+    summed worker RSS polled every 2 ms (the fallback, and a cross-check)."""
 
     def __init__(self, master_pid):
         self.pids = worker_pids(master_pid)
-        self.idle = cg_read("memory.usage_in_bytes")
+        self.idle = cg_read("memory.usage_in_bytes") if USE_CGROUP else 0
         self.rss_idle = self.rss_total()
         self.rss_peak = self.rss_idle
         self._stop = threading.Event()
@@ -112,17 +161,22 @@ class Memory:
             time.sleep(0.002)
 
     def __enter__(self):
-        cg_reset_peak()
+        if USE_CGROUP:
+            cg_reset_peak()
         self._t.start()
         return self
 
     def __exit__(self, *exc):
         self._stop.set()
         self._t.join()
-        self.peak = cg_read("memory.max_usage_in_bytes")
+        if USE_CGROUP:
+            self.peak = cg_read("memory.max_usage_in_bytes")
+        else:
+            self.idle, self.peak = self.rss_idle, self.rss_peak
 
     def report(self):
-        return {"idle_mib": round(self.idle / MIB, 1),
+        return {"memory_source": MEMORY_SOURCE,
+                "idle_mib": round(self.idle / MIB, 1),
                 "peak_extra_mib": round((self.peak - self.idle) / MIB, 1),
                 "rss_peak_extra_mib": round((self.rss_peak - self.rss_idle) / MIB, 1)}
 
@@ -212,8 +266,10 @@ def med_range(values, fmt="{:.0f}"):
 def scenario_argon2(args):
     print(f"cpus={os.cpu_count()}  gunicorn workers={args.workers} (sync)  "
           f"{args.runs} runs per setting, median (min-max)", flush=True)
+    print(f"each run: {args.n} single logins, {args.bursts} bursts of 10, 3 bursts of 10 wrong "
+          f"passwords; memory = {MEMORY_SOURCE}", flush=True)
     print(f"{'setting':<15} {'params':<17} {'1 login':>10} {'10 at once':>16} "
-          f"{'p95 of the 10':>16} {'10 wrong pw':>14} {'peak RAM above idle':>21}", flush=True)
+          f"{'p95 in bursts':>16} {'10 wrong pw':>14} {'peak RAM above idle':>21}", flush=True)
     for name, (label, params) in SETTINGS.items():
         set_passwords(name)
         runs = []
@@ -252,34 +308,73 @@ def scenario_argon2(args):
           f"{statistics.median(r['idle_mib'] for r in runs):.0f}MiB", flush=True)
 
 
+def print_sweep(points_by_setting, runs, workers):
+    cores = os.cpu_count()
+    print(f"cpus={cores}  gunicorn workers={workers} (sync)  sustained logins, "
+          f"{runs} runs per point, median (min-max)", flush=True)
+    print(f"{'setting':<15} {'clients':>7}  {'logins/s':<21} {'p95':<20} "
+          f"{'gunicorn CPU/login':<20} {'postgres CPU/login':<20} {'load client CPU':<16}",
+          flush=True)
+    for name, points in points_by_setting.items():
+        label = SETTINGS[name][0]
+        for clients in sorted(points):
+            col = lambda k: [r[k] for r in points[clients]]
+            print(f"{label:<15} {clients:>7}  {med_range(col('rps'), '{:.1f}') + '/s':<21} "
+                  f"{med_range(col('p95_ms')) + 'ms':<20} "
+                  f"{med_range(col('server_cpu_ms_per_login')) + 'ms':<20} "
+                  f"{med_range(col('db_cpu_ms_per_login')) + 'ms':<20} "
+                  f"{med_range(col('client_cpu_pct_of_machine'), '{:.1f}') + '%':<16}", flush=True)
+
+
 def scenario_sweep(args):
-    print(f"cpus={os.cpu_count()}  gunicorn workers={args.workers} (sync)  "
-          f"sustained logins, logins/s | p95 at each client count", flush=True)
+    if args.from_results:
+        rows = [json.loads(l) for l in open(os.path.join(HERE, "results.jsonl"))]
+        found = {}
+        for r in rows:
+            if r["scenario"] == "sweep":
+                found.setdefault(r["hasher"], {}).setdefault(r["clients"], []).append(r)
+        print_sweep({n: found[n] for n in SETTINGS if n in found}, args.runs, args.workers)
+        return
     levels = [1, 2, 4, 8, 16]
-    print(f"{'setting':<15} " + "".join(f"{str(c) + (' clients' if c > 1 else ' client'):>20}" for c in levels), flush=True)
-    for name, (label, _) in SETTINGS.items():
+    results = {}
+    for name in SETTINGS:
         set_passwords(name)
-        proc = start_gunicorn(name, args.workers)
-        cells = []
-        try:
-            warm_without_hashing(args.workers)
-            for clients in levels:
-                total = max(40, 12 * clients)
-                rps, res = sustained(total, clients, lambda i: login("after", "small", i % 40))
-                p95 = pct([r["ms"] for r in res], 95)
-                record({"scenario": "sweep", "hasher": name, "clients": clients,
-                        "total": total, "rps": round(rps, 2), "p95_ms": round(p95, 1),
-                        "p50_ms": round(pct([r["ms"] for r in res], 50), 1)})
-                cells.append(f"{rps:5.1f}/s | {p95:5.0f}ms")
-        finally:
-            stop_gunicorn(proc)
-        print(f"{label:<15} " + "".join(f"{c:>20}" for c in cells), flush=True)
+        points = {c: [] for c in levels}
+        for run in range(args.runs):
+            proc = start_gunicorn(name, args.workers)
+            try:
+                warm_without_hashing(args.workers)
+                pids = worker_pids(proc.pid)
+                for clients in levels:
+                    total = max(40, 12 * clients)
+                    srv0, db0, cli0 = cpu_seconds(pids), db_cpu_seconds(), client_cpu_seconds()
+                    t0 = time.perf_counter()
+                    rps, res = sustained(total, clients, lambda i: login("after", "small", i % 40))
+                    wall = time.perf_counter() - t0
+                    srv = cpu_seconds(pids) - srv0
+                    db = db_cpu_seconds() - db0
+                    cli = client_cpu_seconds() - cli0
+                    row = {"scenario": "sweep", "hasher": name, "run": run, "clients": clients,
+                           "total": total, "rps": round(rps, 2),
+                           "p50_ms": round(pct([r["ms"] for r in res], 50), 1),
+                           "p95_ms": round(pct([r["ms"] for r in res], 95), 1),
+                           "server_cpu_ms_per_login": round(srv / total * 1000, 1),
+                           "db_cpu_ms_per_login": round(db / total * 1000, 1),
+                           "client_cpu_pct_of_machine":
+                               round(cli / (wall * os.cpu_count()) * 100, 1)}
+                    record(row)
+                    points[clients].append(row)
+            finally:
+                stop_gunicorn(proc)
+        results[name] = points
+    print_sweep(results, args.runs, args.workers)
 
 
 def scenario_end_to_end(args):
     print(f"cpus={os.cpu_count()}  gunicorn workers={args.workers} (sync)  {args.n} logins, "
           f"{args.clients} clients, user with 50 projects, {args.runs} runs, median (min-max)",
           flush=True)
+    print(f"memory = {MEMORY_SOURCE}", flush=True)
     for version, name in (("before", "argon2-default"), ("after", "argon2-default"),
                           ("after", "argon2-owasp")):
         set_passwords(name)
@@ -288,13 +383,22 @@ def scenario_end_to_end(args):
             proc = start_gunicorn(name, args.workers)
             try:
                 warm_without_hashing(args.workers)
+                pids = worker_pids(proc.pid)
                 with Memory(proc.pid) as mem:
+                    srv0, db0, cli0 = cpu_seconds(pids), db_cpu_seconds(), client_cpu_seconds()
+                    t0 = time.perf_counter()
                     rps, res = sustained(args.n, args.clients,
                                          lambda i: login(version, "big", i % 40))
+                    wall = time.perf_counter() - t0
+                    srv, cli = cpu_seconds(pids) - srv0, client_cpu_seconds() - cli0
+                    db = db_cpu_seconds() - db0
                 ms = [r["ms"] for r in res]
                 row = {"scenario": "end_to_end", "version": version, "hasher": name,
                        "run": run, "queries": res[0]["queries"], "rps": round(rps, 2),
                        "p50_ms": round(pct(ms, 50), 1), "p95_ms": round(pct(ms, 95), 1),
+                       "server_cpu_ms_per_login": round(srv / args.n * 1000, 1),
+                       "db_cpu_ms_per_login": round(db / args.n * 1000, 1),
+                       "client_cpu_pct_of_machine": round(cli / (wall * os.cpu_count()) * 100, 1),
                        **mem.report()}
                 record(row)
                 runs.append(row)
@@ -307,6 +411,10 @@ def scenario_end_to_end(args):
               f"p50={med_range(col('p50_ms')) + 'ms':<16} "
               f"p95={med_range(col('p95_ms')) + 'ms':<19} "
               f"peak RAM above idle={med_range(col('peak_extra_mib')) + 'MiB'}", flush=True)
+        print(f"{'':<29} gunicorn CPU/login={med_range(col('server_cpu_ms_per_login'))}ms  "
+              f"postgres CPU/login={med_range(col('db_cpu_ms_per_login'))}ms  "
+              f"load client CPU={med_range(col('client_cpu_pct_of_machine'), '{:.1f}')}% of machine",
+              flush=True)
 
 
 if __name__ == "__main__":
@@ -317,6 +425,8 @@ if __name__ == "__main__":
     ap.add_argument("--n", type=int, default=30)
     ap.add_argument("--bursts", type=int, default=10)
     ap.add_argument("--clients", type=int, default=10)
+    ap.add_argument("--from-results", action="store_true",
+                    help="sweep only: print the table from results.jsonl without running")
     args = ap.parse_args()
     {"argon2": scenario_argon2, "sweep": scenario_sweep,
      "end_to_end": scenario_end_to_end}[args.scenario](args)

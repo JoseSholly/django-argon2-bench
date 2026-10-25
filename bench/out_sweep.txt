@@ -1,5 +1,17 @@
-cpus=4  gunicorn workers=9 (sync)  sustained logins, logins/s | p95 at each client count
-setting                     1 client           2 clients           4 clients           8 clients          16 clients
-Django default       8.3/s |   178ms    13.4/s |   172ms    14.7/s |   307ms    15.5/s |   612ms    15.2/s |  1229ms
-RFC 9106 #2         10.6/s |   138ms    14.8/s |   150ms    16.3/s |   278ms    17.6/s |   526ms    17.1/s |  1141ms
-OWASP minimum       21.7/s |    77ms    45.1/s |    72ms    82.3/s |    65ms   101.4/s |   109ms   103.1/s |   195ms
+cpus=4  gunicorn workers=9 (sync)  sustained logins, 3 runs per point, median (min-max)
+setting         clients  logins/s              p95                  gunicorn CPU/login   postgres CPU/login   load client CPU 
+Django default        1  9.0 (8.9-10.0)/s      178 (153-210)ms      246 (241-248)ms      4 (3-4)ms            0.2 (0.2-0.2)%  
+Django default        2  13.5 (13.4-13.9)/s    174 (161-179)ms      244 (241-248)ms      4 (3-4)ms            0.3 (0.3-0.3)%  
+Django default        4  15.3 (15.0-15.6)/s    307 (286-316)ms      242 (240-246)ms      3 (3-3)ms            0.3 (0.3-0.3)%  
+Django default        8  15.8 (15.4-15.9)/s    593 (589-620)ms      242 (239-246)ms      3 (3-3)ms            0.3 (0.3-0.3)%  
+Django default       16  15.6 (15.3-16.1)/s    1183 (1177-1229)ms   246 (239-250)ms      3 (3-3)ms            0.3 (0.3-0.3)%  
+RFC 9106 #2           1  10.3 (10.1-10.8)/s    155 (136-166)ms      226 (222-232)ms      4 (4-4)ms            0.3 (0.3-0.3)%  
+RFC 9106 #2           2  15.0 (14.9-15.5)/s    150 (145-153)ms      212 (204-216)ms      3 (3-4)ms            0.3 (0.3-0.3)%  
+RFC 9106 #2           4  17.4 (17.3-17.4)/s    261 (259-264)ms      214 (212-214)ms      3 (3-4)ms            0.4 (0.4-0.4)%  
+RFC 9106 #2           8  17.4 (17.3-17.5)/s    546 (544-552)ms      218 (218-220)ms      3 (3-3)ms            0.3 (0.3-0.3)%  
+RFC 9106 #2          16  17.7 (17.1-17.8)/s    1033 (1030-1099)ms   216 (215-223)ms      3 (3-3)ms            0.3 (0.3-0.3)%  
+OWASP minimum         1  19.3 (17.4-20.8)/s    108 (84-153)ms       45 (42-50)ms         4 (3-4)ms            0.4 (0.4-0.5)%  
+OWASP minimum         2  42.5 (38.1-47.6)/s    57 (48-152)ms        39 (37-47)ms         3 (3-3)ms            0.9 (0.8-1.0)%  
+OWASP minimum         4  89.6 (83.0-94.2)/s    55 (51-56)ms         36 (34-37)ms         3 (3-3)ms            1.6 (1.4-1.6)%  
+OWASP minimum         8  96.4 (93.5-98.9)/s    115 (113-117)ms      36 (36-38)ms         3 (3-3)ms            1.4 (1.4-1.4)%  
+OWASP minimum        16  95.4 (95.2-100.2)/s   211 (208-213)ms      37 (36-38)ms         3 (3-3)ms            1.4 (1.3-1.4)%  

@@ -26,7 +26,7 @@ MIDDLEWARE = [
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "teamhub",
+        "NAME": os.environ.get("TEAMHUB_DB", "teamhub"),
         "USER": "teamhub",
         "PASSWORD": "teamhub",
         "HOST": "127.0.0.1",
@@ -40,7 +40,6 @@ DATABASES = {
 _HASHERS = {
     "md5": "django.contrib.auth.hashers.MD5PasswordHasher",
     "argon2-default": "django.contrib.auth.hashers.Argon2PasswordHasher",
-    "argon2-64m": "accounts.hashers.Argon2Mid",
     "argon2-owasp": "accounts.hashers.Argon2Owasp",
     "argon2-rfc9106": "accounts.hashers.Argon2Rfc9106",
 }
